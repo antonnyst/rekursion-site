@@ -1,0 +1,5 @@
+[debug]
+template_dir = "site/templates/"
+
+[release]
+template_dir = "site/templates/"
