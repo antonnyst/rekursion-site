@@ -21,22 +21,22 @@ fn format_radix(mut x: u32, radix: u32) -> String {
 }
 
 
-#[get("/<base>/<num>")]
-fn rekursion(base: u32, num: &str) -> Option<Template> {
+#[get("/<base>/<num>", rank = 1)]
+fn rekursion(base: u32, num: &str) -> Result<Template, Redirect> {
     if base < 2 || base > 36 {
-        return None
+        return Err(Redirect::to(uri!("/")))
     }
 
     match u32::from_str_radix(num, base) {
         Ok(n) => {
             let level = format_radix(n + 1, base);
-            Some(Template::render("index", context! { level, base }))
+            Ok(Template::render("index", context! { level, base }))
         }
-        Err(_) => None
+        Err(_) => Err(Redirect::to(uri!("/")))
     }
 }
 
-#[get("/")]
+#[get("/<_..>" , rank = 2)]
 fn index() -> Redirect {
     Redirect::to(uri!("/2/0"))
 }
@@ -44,8 +44,7 @@ fn index() -> Redirect {
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index])
-        .mount("/", routes![rekursion])
-        .mount("/", FileServer::from(relative!("/site/static")))
+        .mount("/", routes![index, rekursion])
+        .mount("/", FileServer::from(relative!("/site/static")).rank(0))
         .attach(Template::fairing())
 }
